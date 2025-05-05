@@ -16,14 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('schools.urls')),  # Убедись, что здесь правильный путь
-]
-
 from django.conf import settings
 from django.conf.urls.static import static
 
-# Если мы находимся в режиме разработки, Django будет искать медиафайлы
+urlpatterns = [
+    path('admin/', admin.site.urls),  # Маршрут для админки
+    path('', include('schools.urls')),  # Подключаем маршруты из приложения 'schools'
+]
+
+# Настройки для медиафайлов
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
