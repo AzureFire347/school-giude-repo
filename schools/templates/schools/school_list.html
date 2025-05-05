@@ -1,0 +1,153 @@
+{% extends "schools/base.html" %}
+
+{% block content %}
+<h1 class="mb-4 font-weight-bold" style="font-family: 'Roboto', sans-serif; font-style: italic;">Список школ в Худжанде</h1>
+
+<!-- Форма поиска и фильтрации -->
+<form method="GET" action="" class="d-flex mb-4 align-items-center">
+    <input type="text" name="q" class="form-control me-2" placeholder="Поиск по названию..." value="{{ request.GET.q }}">
+
+    <!-- Уменьшаем блок фильтрации по категориям -->
+    <select name="category" class="form-select me-2" style="width: 250px;">
+        <option value="">Все категории</option>
+        {% for key, value in categories.items %}
+            <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <div class="position-relative me-2" style="width: 350px;">
+        <select name="district" class="form-select" style="padding-right: 2.5rem;">
+            <option value="">Все районы</option>
+            {% for key, value in districts.items %}
+                <option value="{{ key }}" {% if selected_district == key %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+        </select>
+        <span 
+            class="position-absolute top-50 end-0 translate-middle-y me-2"
+            style="cursor: pointer; font-size: 18px;"
+            data-bs-toggle="tooltip"
+            data-bs-html="true"
+            data-bs-placement="top"
+            data-bs-title="
+                <strong>Центральный:</strong> 1-3 микрорайоны, площади Панҷшанбе, Парк Камоли Худжанди.<br>
+                <strong>Северный:</strong> микрорайоны 21-23, аэропорт.<br>
+                <strong>Восточный:</strong> микрорайоны 19-20, стадион.<br>
+                <strong>Западный:</strong> микрорайоны 8-11, выезд на Душанбе.<br>
+                <strong>Южный:</strong> микрорайоны 12-14.
+            ">
+            ℹ️
+        </span>
+    </div>    
+
+    <button type="submit" class="btn btn-primary">Поиск</button>
+</form>
+
+<!-- Список школ -->
+<div class="row">
+    {% for school in schools %}
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm border-0 position-relative" style="height: auto; display: flex; flex-direction: column; overflow: hidden;">
+            {% if school.image %}
+            <img src="{{ school.image.url }}" class="card-img-top rounded-top" alt="{{ school.name }}" style="height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body d-flex flex-column" style="flex-grow: 1;">
+                <div class="d-flex justify-content-between">
+                    <!-- Название и Адрес слева -->
+                    <div>
+                        <h5 class="card-title font-weight-bold font-italic">{{ school.name }}</h5>
+                        <p class="card-text text-muted">{{ school.address }}</p>
+                    </div>
+                    <!-- Рейтинг и Категория справа -->
+                    <div class="text-end">
+                        <div class="mb-2">
+                            <span class="badge bg-warning text-dark">{{ school.rating }}</span>
+                        </div>
+                        <p class="card-text"><small class="text-muted">{{ school.get_category_display }}</small></p>
+                    </div>
+                </div>
+
+                <!-- Описание -->
+                {% if school.description %}
+                <div class="text-start mt-3">
+                    <button class="btn btn-outline-info d-flex align-items-center description-toggle" data-bs-toggle="collapse" data-target="#description{{ school.id }}" aria-expanded="false" aria-controls="description{{ school.id }}">
+                        <i class="fas fa-chevron-down me-2"></i>Описание
+                    </button>
+                    <div id="description{{ school.id }}" class="collapse description-content">
+                        <p class="card-text p-3" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; margin-top: 10px;">{{ school.description }}</p>
+                        
+                        <!-- Контактная информация -->
+                        {% if school.contact_info %}
+                        <div class="mt-3">
+                            <h6>Контактная информация:</h6>
+                            <div id="contact-info-{{ school.id }}" 
+                                 style="cursor: pointer; color: #0d6efd; text-decoration: underline;"
+                                 onclick="copyContactInfo('{{ school.id }}')">
+                                {{ school.contact_info }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <!-- Конец контактной информации -->
+
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Кнопка для местоположения в правом верхнем углу -->
+            {% if school.google_maps_url %}
+            <a href="{{ school.google_maps_url }}" target="_blank" class="position-absolute top-0 end-0 m-3">
+                <button class="btn btn-success btn-sm text-white" style="border-radius: 25px; background-color: #4CAF50; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: background-color 0.3s;">
+                    Посмотреть местоположение
+                </button>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .description-content {
+        display: none;
+        transition: max-height 0.3s ease-in-out;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toggles = document.querySelectorAll('.description-toggle');
+        toggles.forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                var target = document.querySelector(this.getAttribute('data-target'));
+                if (target.style.display === 'none' || target.style.display === '') {
+                    target.style.display = 'block';
+                } else {
+                    target.style.display = 'none';
+                }
+            });
+        });
+
+        // ИНИЦИАЛИЗАЦИЯ ВСЕХ TOOLTIP'ов
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+
+    // Функция копирования контактной информации
+    function copyContactInfo(id) {
+        const text = document.getElementById('contact-info-' + id).innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Контактная информация скопирована в буфер обмена!');
+        }, function(err) {
+            alert('Ошибка копирования: ' + err);
+        });
+    }
+</script>
+
+{% endblock %}
+
+<!-- Подключение шрифта Roboto -->
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
